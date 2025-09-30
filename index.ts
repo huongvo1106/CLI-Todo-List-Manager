@@ -2,18 +2,41 @@ import os = require("os");
 import ts = require("typescript");
 import * as fs from 'fs';
 import * as path from 'path';
+import csv from 'csv-parser';
+import { log } from "console";
+import { resourceUsage } from "process";
+
 
 
 interface ProteinAmount {
-    amount: number;
     loggedDate: string;
+    amount: number;
 }
 
 function autoCalculateDate(): string {
     return Date().substring(4,15);
 }
 
-function getTotalDailyProtein(): void {
+function getTotalDailyProtein(): Promise<number> {
+    const csvFile = path.join("proteinRecord.csv");
+
+    return new Promise((resolve,reject) => {
+        let totalValue: number = 0;
+        fs.createReadStream(csvFile)
+        .pipe(csv())
+        .on('data', (row: ProteinAmount) => {
+        const amountColumn: Number = row.amount;
+        totalValue += Number(amountColumn);
+        })
+        .on('end', () => {
+            console.log('CSV successfully processed.');
+            resolve(totalValue);
+        })
+        .on('error', (err) => {
+            console.error('Error reading or parsing CSV:', err);
+            reject(err);
+        });
+    })
     
 }
 
@@ -27,10 +50,6 @@ function addProtein(proteinAmount: number): void {
     proteinAmountList.push(newProteinAmount);
    
     writeToCsv(newProteinAmount);
-    
-    
-    console.log(`${newProteinAmount.amount} is logged on ${newProteinAmount.loggedDate}.`);
-
 }
 
 function writeToCsv(data: ProteinAmount): void {
@@ -45,5 +64,7 @@ function writeToCsv(data: ProteinAmount): void {
 
 }
 
-addProtein(10)
-addProtein(5)
+addProtein(10);
+addProtein(5);
+let totalValue = await getTotalDailyProtein();
+console.log(`${totalValue}`);
