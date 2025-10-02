@@ -16,9 +16,10 @@ function autoCalculateDate(): string {
     return Date().substring(4,15);
 }
 
-function getTotalDailyProtein(): Promise<number> {
+async function getTotalDailyProtein(){
     const csvFile = path.join("proteinRecord.csv");
-    return getTotalDailyProteinFromCSV(csvFile);
+    const todayAmount: number = await getTotalDailyProteinFromCSV(csvFile);
+    console.log(`Your today protein consumption is ${todayAmount}`);
 }
 
 function getTotalDailyProteinFromCSV(csvFile: string): Promise<number> {
