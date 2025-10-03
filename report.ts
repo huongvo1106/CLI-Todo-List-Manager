@@ -18,6 +18,18 @@ export async function getTotalProtein(){
     });
 }
 
+export async function getAverageProteinAmount() {
+    const csvFile = path.join("proteinRecord.csv");
+    const amountReport: Map<string,number> = await getReportCSV(csvFile);
+    let totalAmount: number = 0;
+    amountReport.forEach((amount, loggedDate) => {
+            totalAmount += isNaN(amount) ? 0 : amount;
+    });
+    const averageAmount = totalAmount / amountReport.size;
+    console.log(`Average Amount is ${averageAmount.toFixed(2)}`);
+    
+}
+
 function getReportCSV(csvFile: string): Promise<Map<string, number>> {
     return new Promise((resolve,reject) => {
         const overalReport: Map<string, number> = new Map<string, number>();

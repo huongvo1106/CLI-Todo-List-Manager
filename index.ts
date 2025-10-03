@@ -3,7 +3,7 @@ import ts = require("typescript");
 import prompt from 'prompt-sync';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getTotalProtein, getTotalTodayProtein } from './report.js';
+import { getTotalProtein, getTotalTodayProtein, getAverageProteinAmount } from './report.js';
 
 
 export interface ProteinAmount {
@@ -49,6 +49,8 @@ function main():void {
     } else if (userOption === "2") {
         getTotalTodayProtein();         
     } else if (userOption === "3") {
+        getAverageProteinAmount();
+    } else if (userOption === "4") {
         while(true) {
             const loggedAmount: String | null = syncPrompt("Enter your protein amount: ");
             if (!isNaN(Number(loggedAmount))) {
