@@ -12,37 +12,22 @@ interface ProteinAmount {
     amount: number;
 }
 
-function autoCalculateDate(): string {
+function todayDate(): string {
     return Date().substring(4,15);
 }
 
-async function getTotalDailyProtein(){
+async function getTotalTodayProtein(){
     const csvFile = path.join("proteinRecord.csv");
-    const todayAmount: number = await getTotalDailyProteinFromCSV(csvFile);
-    console.log(`Your today protein consumption is ${todayAmount}`);
+    const amountReport: Map<string,number> = await getReportCSV(csvFile);
+    console.log(`Your today protein consumption is ${amountReport.get(todayDate())}`);
 }
 
-function getTotalDailyProteinFromCSV(csvFile: string): Promise<number> {
-    return new Promise((resolve,reject) => {
-        let totalValue: number = 0;
-        fs.createReadStream(csvFile)
-        .pipe(csv())
-        .on('data', (row: ProteinAmount) => {
-            const amountColumn: Number = row.amount;
-            const loggedDateColumn: String = row.loggedDate;
-            if (loggedDateColumn == autoCalculateDate()) {
-                totalValue += Number(amountColumn);
-            } 
-        })
-        .on('end', () => {
-            console.log('CSV successfully processed.');
-            resolve(totalValue);
-        })
-        .on('error', (err) => {
-            console.error('Error reading or parsing CSV:', err);
-            reject(err);
-        });
-    })
+async function getTotalProtein(){
+    const csvFile = path.join("proteinRecord.csv");
+    const amountReport: Map<string,number> = await getReportCSV(csvFile);
+    amountReport.forEach((amount, loggedDate) => {
+        console.log(`${loggedDate}: ${amount}`)
+    });
 }
 
 const proteinAmountList: ProteinAmount[] = [];
@@ -50,7 +35,7 @@ const proteinAmountList: ProteinAmount[] = [];
 function addProtein(proteinAmount: number): void {
     const newProteinAmount: ProteinAmount = {
         amount: proteinAmount,
-        loggedDate: autoCalculateDate(),
+        loggedDate: todayDate(),
     }
     proteinAmountList.push(newProteinAmount);
    
@@ -68,15 +53,27 @@ function writeToCsv(data: ProteinAmount): void {
     }
 }
 
-function report(): void {
-    const overalReport: Map<string, number> = new Map<string, number>;
-
-    try {
-        const csvFile = path.join("proteinRecord.csv");
-
-    } catch {
-       console.error("Fail log to get data from csv."); 
-    }
+function getReportCSV(csvFile: string): Promise<Map<string, number>> {
+    return new Promise((resolve,reject) => {
+        const overalReport: Map<string, number> = new Map<string, number>();
+        fs.createReadStream(csvFile)
+        .pipe(csv())
+        .on('data', (row: ProteinAmount) => {
+            const amountColumn: Number = row.amount;
+            const loggedDateColumn: string = row.loggedDate;
+            const currentAmount: Number = overalReport.get(loggedDateColumn) ?? 0;
+            overalReport.set(loggedDateColumn, Number(amountColumn)! + Number(currentAmount));
+            
+        })
+        .on('end', () => {
+            console.log('CSV successfully processed.');
+            resolve(overalReport);
+        })
+        .on('error', (err) => {
+            console.error('Error reading or parsing CSV:', err);
+            reject(err);
+        });
+    })
 }
 
 // --- Execution function ---
@@ -86,9 +83,9 @@ function main():void {
     const syncPrompt = prompt();
     const userOption: String | null = syncPrompt("What is your option? ");
     if (userOption === "1") {
-        report();
+       getTotalProtein();
     } else if (userOption === "2") {
-        getTotalDailyProtein();         
+        getTotalTodayProtein();         
     } else if (userOption === "3") {
         while(true) {
             const loggedAmount: String | null = syncPrompt("Enter your protein amount: ");
@@ -98,9 +95,8 @@ function main():void {
             }
         }
     } else {
-        console.log("Thank you!");
-    }
-    
+        console.log("Invalid input.");
+    }  
 }
 
 main();
